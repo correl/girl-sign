@@ -2,3 +2,5 @@
 
 A MicroPython application to control a cheap, rewired LED locker sign that says
 "GIRL".
+
+[[file:sign.jpg]]
