@@ -1,0 +1,4 @@
+#+title: GIRL Sign
+
+A MicroPython application to control a cheap, rewired LED locker sign that says
+"GIRL".
