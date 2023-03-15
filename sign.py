@@ -8,7 +8,6 @@ D3 = 0
 D4 = 2
 D5 = 14
 D6 = 12
-DEBOUNCE_DELAY = 50
 
 
 class Girl:
@@ -62,6 +61,39 @@ def repeat(value):
         yield value
 
 
+class Button:
+    DEBOUNCE_DELAY = 50
+
+    def __init__(self, pin, inverted=True):
+        self.pin = pin
+        self.inverted = inverted
+        self._pressed = False
+        self._just_changed = False
+        self._last_checked = None
+
+    def update(self):
+        self._just_changed = False
+        now = time.ticks_ms()
+        value = bool(self.pin.value())
+        if self.inverted:
+            value = not value
+        if value != self._pressed:
+            if self._last_checked is None:
+                self._last_checked = time.ticks_ms()
+            elif time.ticks_diff(now, self._last_checked) > self.DEBOUNCE_DELAY:
+                self._pressed = not self._pressed
+                self._last_checked = None
+                self._just_changed = True
+        elif time.ticks_diff(now, self._last_checked) > self.DEBOUNCE_DELAY:
+            self.last_checked = None
+
+    def pressed(self):
+        return self._pressed and self._just_changed
+
+    def released(self):
+        return not self._pressed and self._just_changed
+
+
 class App:
     MODE_STATIC = "static"
     MODE_FLASH = "flash"
@@ -71,9 +103,7 @@ class App:
 
     def __init__(self):
         self.sign = Girl(D1, D2, D3, D5)
-        self.mode_switch_pressed = False
-        self.mode_switch_last = None
-        self.mode_switch_pin = Pin(D6, Pin.IN, Pin.PULL_UP)
+        self.mode_button = Button(Pin(D6, Pin.IN, Pin.PULL_UP), inverted=True)
         self.modes = cycle(
             [
                 self.MODE_STATIC,
@@ -140,20 +170,10 @@ class App:
         self.last_update = time.ticks_ms()
 
     def tick(self):
-        if (not self.mode_switch_pin.value()) != self.mode_switch_pressed:
-            if self.mode_switch_last is None:
-                self.mode_switch_last = time.ticks_ms()
-            elif (
-                time.ticks_diff(time.ticks_ms(), self.mode_switch_last) > DEBOUNCE_DELAY
-            ):
-                self.mode_switch_pressed = not self.mode_switch_pressed
-                self.mode_switch_last = None
-                print("BUTTON CHANGE", self.mode_switch_pressed)
-                if not self.mode_switch_pressed:
-                    # Was just released
-                    self.set_mode(next(self.modes))
-        elif time.ticks_diff(time.ticks_ms(), self.mode_switch_last) > DEBOUNCE_DELAY:
-            self.mode_switch_last = None
+        self.mode_button.update()
+        if self.mode_button.released():
+            # Was just released
+            self.set_mode(next(self.modes))
         if time.ticks_diff(time.ticks_ms(), self.last_update) > self.delay:
             self.update()
 
