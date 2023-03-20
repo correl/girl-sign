@@ -1,6 +1,7 @@
 #+title: GIRL Sign
 
 A MicroPython application to control a cheap, rewired LED locker sign that says
-"GIRL".
+"GIRL". A button is used to toggle between a handful of patterns for flashing
+the letters.
 
-[[file:sign.jpg]]
+[[file:sign.webm]]
